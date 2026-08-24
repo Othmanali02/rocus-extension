@@ -32,9 +32,22 @@ async function checkConnectionAndLoadAlbums() {
 	const connectionStatus = document.getElementById("connectionStatus");
 	const albumBrowser = document.getElementById("albumBrowser");
 
+	// Show the last-known album list immediately, if we have one, so the
+	// popup is never blocked on a live Rocus tab just to render something -
+	// saving into a stale-looking list still works, since SAVE_TO_ALBUM
+	// opens a hidden Rocus tab on its own regardless of what loaded here.
+	const { cachedAlbums } = await chrome.storage.local.get("cachedAlbums");
+	if (cachedAlbums) {
+		albums = cachedAlbums;
+		connectionStatus.style.display = "none";
+		albumBrowser.classList.add("active");
+		displayAlbums(albums);
+	}
+
 	try {
-		// Try to read albums from IndexedDB
+		// Try to read albums live from a Rocus tab
 		albums = await readAlbumsFromIndexedDB();
+		await chrome.storage.local.set({ cachedAlbums: albums });
 
 		// Connection successful
 		connectionStatus.style.display = "none";
@@ -44,8 +57,10 @@ async function checkConnectionAndLoadAlbums() {
 		displayAlbums(albums);
 	} catch (error) {
 		console.error("Connection error:", error);
-		connectionStatus.style.display = "block";
-		albumBrowser.classList.remove("active");
+		if (!cachedAlbums) {
+			connectionStatus.style.display = "block";
+			albumBrowser.classList.remove("active");
+		}
 	}
 }
 
