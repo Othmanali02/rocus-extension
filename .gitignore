@@ -1,0 +1,9 @@
+# Build artifacts / packaged zips
+*.zip
+chrome/rocusbuild2/
+firefox/web-ext-artifacts/
+
+# Editor / tooling
+.claude/
+.DS_Store
+node_modules/
