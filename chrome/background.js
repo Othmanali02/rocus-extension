@@ -46,7 +46,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 			pending.resolve({ ok: !!msg.success });
 		}
 	}
+
+	// 5) User clicked a return-trigger insight's text in the quick-add
+	// banner - open/focus a Rocus tab at the deep link it pointed at.
+	// Fire-and-forget: the content script doesn't wait on a response.
+	if (msg.type === "OPEN_INSIGHT" && msg.url) {
+		openInsightUrl(msg.url);
+	}
 });
+
+// Unlike handleSavePage()'s hidden background tab (opened inactive, just
+// to relay a save), this is a direct user click on a notification - the
+// tab should actually come to the front, not just exist.
+async function openInsightUrl(url) {
+	const tab = await findRocusTab();
+	if (tab) {
+		await chrome.tabs.update(tab.id, { url, active: true });
+		await chrome.windows.update(tab.windowId, { focused: true });
+	} else {
+		await chrome.tabs.create({ url });
+	}
+}
 
 // Lets rocus.io itself detect whether this extension is installed (e.g. for
 // the onboarding tutorial's "Browser Extension" step) - only reachable from
@@ -55,6 +75,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
 	if (msg?.type === "ROCUS_PING") {
 		sendResponse({ type: "ROCUS_PONG", installed: true, version: chrome.runtime.getManifest().version });
+	}
+
+	// Return-trigger relay: the web app computed a "dormant cluster just got
+	// new items" insight and wants the next ordinary page's quick-add icon
+	// to surface it. Stored for quick-add-banner.js to pick up and clear.
+	if (msg?.type === "ROCUS_INSIGHT_READY" && msg.insight) {
+		chrome.storage.local.set({ pendingInsight: msg.insight });
 	}
 });
 

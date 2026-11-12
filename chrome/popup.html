@@ -367,18 +367,10 @@ body {
     to { opacity: 1; }
 }
 
-.spinner {
-    width: 56px;
-    height: 56px;
-    border: 4px solid #e5e7eb;
-    border-top-color: #4A90E2;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.popup-swirl {
+    width: 90px;
+    height: auto;
+    display: block;
 }
 
 .loading-text {
@@ -520,7 +512,7 @@ body {
             </div>
 
             <div class="album-browser" id="albumBrowser">
-                <div class="section-header">Select Album</div>
+                <div class="section-header">Tap an Album to Save</div>
 
                 <div class="albums-grid" id="albumsGrid">
                 </div>
@@ -531,8 +523,6 @@ body {
                     <p>Create albums in Rocus to organize your links</p>
                 </div>
 
-                <button class="btn btn-primary" id="saveBtn" disabled>Select an Album</button>
-
                 <div class="quick-save-section">
                     <div class="quick-save-text">or save without album</div>
                     <button class="btn btn-secondary" id="quickSaveBtn">Quick Save</button>
@@ -541,7 +531,11 @@ body {
         </div>
 
         <div class="loading-overlay" id="loadingOverlay">
-            <div class="spinner"></div>
+            <svg id="rocusSwirlSvg" class="popup-swirl" viewBox="0 0 839 1076" role="img" aria-label="Saving">
+                <g id="rocusSwirlG">
+                    <path id="rocusSwirlPath" fill="none" stroke="#4A90E2" stroke-width="80" stroke-linecap="butt" stroke-linejoin="round" />
+                </g>
+            </svg>
             <div class="loading-text" id="loadingText">Processing...</div>
         </div>
 

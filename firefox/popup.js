@@ -1,8 +1,11 @@
 import "./browser-polyfill-shim.js";
 import { findRocusTab, installBridgeScript, extractPageContent } from "./rocus-tab.js";
+// popup.js is a real ES module page (not a content-script isolated world),
+// so unlike quick-add-banner.js this can import rocus-swirl.js statically -
+// no dynamic-import/customElements-shim workaround needed here.
+import { createRocusSwirl } from "./rocus-swirl.js";
 
 // State
-let selectedAlbumId = null;
 let currentUrl = "";
 let albums = [];
 
@@ -163,34 +166,18 @@ function displayAlbums(albumsList) {
 	});
 }
 
-// Select album
+// Select album - flashes the selected state for immediate feedback, then
+// saves right away (no separate confirm button in the flow).
 function selectAlbum(albumId) {
-	selectedAlbumId = albumId;
-
-	// Update UI
 	document.querySelectorAll(".album-card").forEach((card) => {
-		if (card.dataset.albumId === albumId) {
-			card.classList.add("selected");
-		} else {
-			card.classList.remove("selected");
-		}
+		card.classList.toggle("selected", card.dataset.albumId === albumId);
 	});
 
-	// Enable save button
-	const saveBtn = document.getElementById("saveBtn");
-	saveBtn.disabled = false;
-	saveBtn.textContent = "Save to Album";
+	saveToAlbum(albumId);
 }
 
 // Setup event listeners
 function setupEventListeners() {
-	// Save button
-	document.getElementById("saveBtn").addEventListener("click", async () => {
-		if (selectedAlbumId) {
-			await saveToAlbum(selectedAlbumId);
-		}
-	});
-
 	// Quick save button (no album)
 	document
 		.getElementById("quickSaveBtn")
@@ -204,17 +191,51 @@ function setupEventListeners() {
 	});
 }
 
+// Plays the real rocus-swirl curl-into-ring / spin / unroll-back-into-logo
+// motion (see /home/seahorse/Documents/Rocus/RocusSwirlAnimation/HANDOFF.md)
+// at 2x the reference speed in the loading overlay's SVG, as "saving..."
+// feedback - same approach as quick-add-banner.js's playSwirlAnimation,
+// minus the img<->svg swap since the popup's SVG is always present in the
+// markup rather than toggled in for a floating page icon.
+function playPopupSwirl() {
+	const g = document.getElementById("rocusSwirlG");
+	const path = document.getElementById("rocusSwirlPath");
+	const anim = createRocusSwirl();
+	const [cx, cy] = anim.config.center;
+	const SPEED = 3; // "3x the reference speed" per product decision - the shape/curl/spin math itself is untouched
+
+	return new Promise((resolve) => {
+		let last = null;
+		let t = 0;
+		function tick(now) {
+			if (last !== null) t += (now - last) * SPEED;
+			last = now;
+			const f = anim.frame(t);
+			path.setAttribute("d", f.path);
+			g.setAttribute("transform", `rotate(${f.rotation.toFixed(2)} ${cx} ${cy})`);
+			if (t < anim.playDuration) {
+				requestAnimationFrame(tick);
+			} else {
+				resolve();
+			}
+		}
+		requestAnimationFrame(tick);
+	});
+}
+
 // Save to album
 async function saveToAlbum(albumId) {
 	const loadingOverlay = document.getElementById("loadingOverlay");
 	const successOverlay = document.getElementById("successOverlay");
 	const loadingText = document.getElementById("loadingText");
 
-	try {
-		// Show loading
-		loadingText.textContent = albumId ? "Saving to album..." : "Processing...";
-		loadingOverlay.classList.add("active");
+	loadingText.textContent = albumId ? "Saving to album..." : "Processing...";
+	loadingOverlay.classList.add("active");
+	// Let the animation play out fully regardless of how fast the actual
+	// save resolves - awaited below on both the success and error paths.
+	const animationDone = playPopupSwirl();
 
+	try {
 		// Get current tab
 		const [tab] = await browser.tabs.query({
 			active: true,
@@ -240,6 +261,8 @@ async function saveToAlbum(albumId) {
 			throw new Error(response?.error || "Rocus could not save this page.");
 		}
 
+		await animationDone;
+
 		// Hide loading, show success
 		loadingOverlay.classList.remove("active");
 		successOverlay.classList.add("active");
@@ -250,6 +273,7 @@ async function saveToAlbum(albumId) {
 		}, 1500);
 	} catch (error) {
 		console.error("Error saving:", error);
+		await animationDone;
 		loadingOverlay.classList.remove("active");
 		alert("Error: " + error.message);
 	}

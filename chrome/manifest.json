@@ -1,12 +1,14 @@
 {
 	"manifest_version": 3,
 	"name": "Rocus",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"description": "Extracts page content and sends to local AI for analysis.",
 	"permissions": ["activeTab", "scripting", "tabs", "storage"],
 	"host_permissions": [
 		"https://rocus.io/*",
-		"https://www.rocus.io/*"
+		"https://www.rocus.io/*",
+		"http://localhost:5173/*",
+		"http://127.0.0.1:5173/*"
 	],
 	"background": {
 		"service_worker": "background.js",
@@ -28,7 +30,7 @@
 	],
 	"web_accessible_resources": [
 		{
-			"resources": ["icons/RocusSwirlBlue.png"],
+			"resources": ["icons/RocusSwirlBlue.png", "rocus-swirl.js"],
 			"matches": ["http://*/*", "https://*/*"]
 		}
 	],
