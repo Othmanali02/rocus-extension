@@ -2,7 +2,7 @@
 	"manifest_version": 3,
 	"name": "Rocus",
 	"version": "0.0.6",
-	"description": "Extracts page content and sends to local AI for analysis.",
+	"description": "Save any page to your Rocus knowledge graph in one click.",
 	"permissions": ["activeTab", "scripting", "tabs", "storage"],
 	"host_permissions": [
 		"https://rocus.io/*",

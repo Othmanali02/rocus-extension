@@ -40,4 +40,7 @@ Each folder is a standalone unpacked extension:
 
 ## License
 
-[MIT](./LICENSE)
+Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See [LICENSE](./LICENSE).
+
+The Rocus extension was released under the MIT License until 12 November 2026 and is licensed under AGPL-3.0 thereafter.
+
