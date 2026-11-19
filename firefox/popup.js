@@ -263,6 +263,11 @@ async function saveToAlbum(albumId) {
 
 		await animationDone;
 
+		if (response.queued) {
+			const text = successOverlay.querySelector(".success-text");
+			if (text) text.textContent = "Saved. Choose how Rocus processes it in the Rocus tab.";
+		}
+
 		// Hide loading, show success
 		loadingOverlay.classList.remove("active");
 		successOverlay.classList.add("active");

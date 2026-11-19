@@ -43,7 +43,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 		if (pending) {
 			clearTimeout(pending.timer);
 			pendingQuickAdds.delete(msg.requestId);
-			pending.resolve({ ok: !!msg.success });
+			pending.resolve({ ok: !!msg.success, queued: !!msg.queued });
 		}
 	}
 
@@ -129,6 +129,16 @@ async function handleSavePage(pageData) {
 		}, QUICK_ADD_TIMEOUT_MS);
 		pendingQuickAdds.set(requestId, { resolve, timer });
 	});
+
+	// queued: Rocus has no processing mode chosen yet (a brand-new user).
+	// The page is saved on that device and waits for the choice, so bring
+	// the Rocus tab to the front where the choice is showing, instead of
+	// closing it before the user ever sees it.
+	if (result.ok && result.queued) {
+		await chrome.tabs.update(tab.id, { active: true }).catch(() => {});
+		if (tab.windowId !== undefined) await chrome.windows.update(tab.windowId, { focused: true }).catch(() => {});
+		return { ok: true, queued: true };
+	}
 
 	if (hiddenTabId) chrome.tabs.remove(hiddenTabId).catch(() => {});
 

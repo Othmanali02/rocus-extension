@@ -49,6 +49,7 @@ export function installBridgeScript() {
 				type: "PAGE_METADATA_PROCESSED_FORWARD",
 				requestId: event.data.requestId,
 				success: event.data.success,
+				queued: !!event.data.queued,
 			});
 		}
 	});
